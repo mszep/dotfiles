@@ -14,8 +14,8 @@ vim.keymap.set("n", "<C-n>", function() harpoon:list():select(3) end)
 --vim.keymap.set("n", "<C-s>", function() harpoon:list():select(4) end)
 
 -- Toggle previous & next buffers stored within Harpoon list
-vim.keymap.set("n", "<C-S-P>", function() harpoon:list():prev() end)
-vim.keymap.set("n", "<C-S-N>", function() harpoon:list():next() end)
+vim.keymap.set("n", "[h", function() harpoon:list():prev() end)
+vim.keymap.set("n", "]h", function() harpoon:list():next() end)
 
 -- basic telescope configuration
 local conf = require("telescope.config").values
@@ -50,8 +50,8 @@ autocmd('LspAttach', {
         vim.keymap.set("n", "<leader>vrr", function() vim.lsp.buf.references() end, opts)
         vim.keymap.set("n", "<leader>vrn", function() vim.lsp.buf.rename() end, opts)
         vim.keymap.set("i", "<C-h>", function() vim.lsp.buf.signature_help() end, opts)
-        vim.keymap.set("n", "[d", function() vim.diagnostic.goto_next() end, opts)
-        vim.keymap.set("n", "]d", function() vim.diagnostic.goto_prev() end, opts)
+        vim.keymap.set("n", "[d", function() vim.diagnostic.goto_prev() end, opts)
+        vim.keymap.set("n", "]d", function() vim.diagnostic.goto_next() end, opts)
     end
 })
 
