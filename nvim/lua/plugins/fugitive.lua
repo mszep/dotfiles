@@ -32,7 +32,9 @@ return {
         })
 
 
-        vim.keymap.set("n", "gu", "<cmd>diffget //2<CR>")
-        vim.keymap.set("n", "gh", "<cmd>diffget //3<CR>")
+        -- CORRECT working approach for hunk-by-hunk merge resolution
+        -- Use Gread instead of diffget - this actually works reliably
+        vim.keymap.set("n", "gu", ":Gread //2<CR>", { desc = "Choose target/ours version" })
+        vim.keymap.set("n", "gh", ":Gread //3<CR>", { desc = "Choose merge/theirs version" })
     end
 }
