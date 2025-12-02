@@ -10,7 +10,6 @@ alias gd="git diff"
 alias k="kubectl"
 alias pj="pbpaste | jq"
 alias de="deactivate"
-alias k="kubectl"
 
 export EDITOR='nvim'
 
