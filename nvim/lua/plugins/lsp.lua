@@ -1,7 +1,6 @@
 return {
-    "neovim/nvim-lspconfig",
+    "williamboman/mason.nvim",
     dependencies = {
-        "williamboman/mason.nvim",
         "williamboman/mason-lspconfig.nvim",
         "hrsh7th/cmp-nvim-lsp",
         "hrsh7th/cmp-buffer",
@@ -22,6 +21,12 @@ return {
             vim.lsp.protocol.make_client_capabilities(),
             cmp_lsp.default_capabilities())
 
+        -- Add mason bin to PATH
+        vim.env.PATH = vim.fn.stdpath("data") .. "/mason/bin:" .. vim.env.PATH
+
+        -- Add nvm node to PATH
+        vim.env.PATH = os.getenv("HOME") .. "/.nvm/versions/node/v24.12.0/bin:" .. vim.env.PATH
+
         require("fidget").setup({})
         require("mason").setup()
         require("mason-lspconfig").setup({
@@ -29,11 +34,56 @@ return {
                 "lua_ls",
                 "rust_analyzer",
                 "gopls",
-                "pyright",
-                "eslint",
+                "ty",
+                -- "tsserver", -- install manually via :MasonInstall typescript-language-server
                 "jsonls",
             },
         })
+
+        -- Configure LSP servers via native vim.lsp.config
+        vim.lsp.config('ty', {
+            cmd = { 'ty', 'server' },
+            filetypes = { 'python' },
+            root_markers = { 'pyproject.toml', 'setup.py', 'requirements.txt', 'pyrightconfig.json' },
+            settings = { ty = {} }
+        })
+
+        vim.lsp.config('lua_ls', {
+            cmd = { 'lua-language-server' },
+            filetypes = { 'lua' },
+            root_markers = { '.luarc.json', '.luacheckrc' },
+        })
+
+        vim.lsp.config('rust_analyzer', {
+            cmd = { 'rust-analyzer' },
+            filetypes = { 'rust' },
+            root_markers = { 'Cargo.toml' },
+        })
+
+        vim.lsp.config('gopls', {
+            cmd = { 'gopls' },
+            filetypes = { 'go' },
+            root_markers = { 'go.mod' },
+        })
+
+        -- ts_ls (TypeScript Language Server)
+        vim.lsp.config('ts_ls', {
+            cmd = { 'typescript-language-server', '--stdio' },
+            filetypes = { 'javascript', 'javascriptreact', 'typescript', 'typescriptreact', 'vue' },
+        })
+
+        vim.lsp.config('jsonls', {
+            cmd = { 'vscode-json-language-server', '--stdio' },
+            filetypes = { 'json' },
+        })
+
+        -- Enable all configured LSP servers
+        vim.lsp.enable('ty')
+        vim.lsp.enable('lua_ls')
+        vim.lsp.enable('rust_analyzer')
+        vim.lsp.enable('gopls')
+        vim.lsp.enable('ts_ls')
+        vim.lsp.enable('jsonls')
 
 
         local cmp_select = { behavior = cmp.SelectBehavior.Select }
