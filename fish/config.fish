@@ -7,24 +7,13 @@ alias vim="nvim"
 alias gpl="git pull"
 alias gs="git status"
 alias gd="git diff"
+alias grw="gh run watch"
+alias gpvw="gh pr view --web"
 alias k="kubectl"
 alias pj="pbpaste | jq"
 alias de="deactivate"
 
 export EDITOR='nvim'
-
-# Create an alias/function to set UV credentials
-function uvauth
-    set -gx TOKEN (aws codeartifact get-authorization-token \
-        --domain xyme-internal \
-        --domain-owner 390844779993 \
-        --output text \
-        --query authorizationToken \
-        --profile dev-poweruser)
-
-    set -gx UV_INDEX_XYME_PYPI_USERNAME aws
-    set -gx UV_INDEX_XYME_PYPI_PASSWORD "$TOKEN"
-end
 
 function awsauth -a profile
     set -q profile[1]
