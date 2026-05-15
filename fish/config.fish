@@ -12,6 +12,9 @@ alias gpvw="gh pr view --web"
 alias k="kubectl"
 alias pj="pbpaste | jq"
 alias de="deactivate"
+alias oc="opencode"
+alias ltr="ls -ltr"
+alias jt="just test"
 
 export EDITOR='nvim'
 
@@ -21,8 +24,14 @@ function awsauth -a profile
     eval (aws configure export-credentials --profile $profile --format env)
 end
 
-function sso 
+function sso
     aws sso login --sso-session mszepieniec
+end
+
+function claude-litellm --description 'Run claude against the internal Litellm endpoint'
+    set -x ANTHROPIC_BASE_URL "https://litellm.dev.xyme.cloud"
+    set -x ANTHROPIC_AUTH_TOKEN "$XYME_LITELLM_API_KEY"
+    claude $argv
 end
 
 eval "$(/opt/homebrew/bin/brew shellenv)"
