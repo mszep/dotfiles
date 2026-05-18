@@ -140,9 +140,9 @@ set_default_shell() {
             if ! grep -q "$shell_path" /etc/shells 2>/dev/null; then
                 echo "$shell_path" | sudo tee -a /etc/shells >/dev/null
             fi
-            chsh -s "$shell_path"
+            sudo chsh -s "$shell_path"
         else
-            chsh -s "$shell_path"
+            sudo chsh -s "$shell_path"
         fi
 
         print_success "Default shell set to fish"
