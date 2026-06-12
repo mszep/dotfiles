@@ -34,7 +34,9 @@ function claude-litellm --description 'Run claude against the internal Litellm e
     claude $argv
 end
 
-eval "$(/opt/homebrew/bin/brew shellenv)"
+if type -q brew
+    eval (brew shellenv)
+end
 
 # opencode
 fish_add_path /Users/mszepieniec/.opencode/bin
