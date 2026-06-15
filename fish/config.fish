@@ -34,8 +34,14 @@ function claude-litellm --description 'Run claude against the internal Litellm e
     claude $argv
 end
 
-if type -q brew
-    eval (brew shellenv)
+# Initialise Homebrew (sets PATH, MANPATH, etc.). Guard on the binary existing on
+# disk by absolute path -- `type -q brew` cannot work here because brew is not yet on
+# PATH; running shellenv is what puts it there. Covers Apple Silicon and Intel; a no-op
+# on Linux where neither path exists.
+if test -x /opt/homebrew/bin/brew
+    eval (/opt/homebrew/bin/brew shellenv)
+else if test -x /usr/local/bin/brew
+    eval (/usr/local/bin/brew shellenv)
 end
 
 # opencode
