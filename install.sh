@@ -36,17 +36,53 @@ install_prerequisites() {
         brew install git neovim fish tmux
     elif [ "$os" = "linux" ]; then
         if command -v apt >/dev/null 2>&1; then
-            sudo apt update && sudo apt install -y git neovim fish tmux
+            sudo apt update && sudo apt install -y git fish tmux curl
+            install_nvim_latest
         elif command -v dnf >/dev/null 2>&1; then
-            sudo dnf install -y git neovim fish tmux
+            sudo dnf install -y git fish tmux curl
+            install_nvim_latest
         elif command -v pacman >/dev/null 2>&1; then
-            sudo pacman -S --noconfirm git neovim fish tmux
+            sudo pacman -S --noconfirm git fish tmux
+            install_nvim_latest
         else
-            print_warning "No supported package manager found. Please install git, neovim, fish, and tmux manually."
+            print_warning "No supported package manager found. Please install git, fish, and tmux manually."
         fi
     fi
 
     print_success "Prerequisites installed"
+}
+
+install_nvim_latest() {
+    print_status "Installing latest Neovim..."
+
+    local nvim_version
+    nvim_version=$(curl -s https://api.github.com/repos/neovim/neovim/releases/latest | grep '"tag_name"' | sed 's/.*v\([^"]*\).*/\1/')
+
+    if [ -z "$nvim_version" ]; then
+        print_warning "Could not fetch latest nvim version, falling back to apt"
+        sudo apt install -y neovim 2>/dev/null || true
+        return
+    fi
+
+    local arch
+    arch=$(uname -m)
+    local nvim_package
+    case "$arch" in
+        x86_64) nvim_package="linux64";;
+        aarch64|arm64) nvim_package="linuxarm64";;
+        *) print_warning "Unknown architecture: $arch"; return;;
+    esac
+
+    local nvim_url="https://github.com/neovim/neovim/releases/download/v${nvim_version}/nvim-${nvim_version}-${nvim_package}.tar.gz"
+    local temp_dir=$(mktemp -d)
+
+    curl -sL "$nvim_url" | tar xz -C "$temp_dir"
+
+    sudo cp -r "$temp_dir/nvim-${nvim_version}-${nvim_package}/"/* /usr/local/
+
+    rm -rf "$temp_dir"
+
+    print_success "Installed Neovim v${nvim_version}"
 }
 
 install_nvim() {
@@ -142,7 +178,7 @@ set_default_shell() {
             fi
             sudo chsh -s "$shell_path"
         else
-            sudo chsh -s "$shell_path"
+            sudo usermod -s "$shell_path" "$USER"
         fi
 
         print_success "Default shell set to fish"
