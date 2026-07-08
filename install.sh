@@ -53,36 +53,48 @@ install_prerequisites() {
 }
 
 install_nvim_latest() {
-    print_status "Installing latest Neovim..."
+    print_status "Installing Neovim v0.11..."
 
-    local nvim_version
-    nvim_version=$(curl -s https://api.github.com/repos/neovim/neovim/releases/latest | grep '"tag_name"' | sed 's/.*v\([^"]*\).*/\1/')
+    local nvim_version="0.11.4"
 
-    if [ -z "$nvim_version" ]; then
-        print_warning "Could not fetch latest nvim version, falling back to apt"
-        sudo apt install -y neovim 2>/dev/null || true
-        return
-    fi
-
-    local arch
-    arch=$(uname -m)
     local nvim_package
-    case "$arch" in
-        x86_64) nvim_package="linux64";;
-        aarch64|arm64) nvim_package="linuxarm64";;
-        *) print_warning "Unknown architecture: $arch"; return;;
+    case "$(uname -m)" in
+        x86_64) nvim_package="linux-x86_64";;
+        aarch64|arm64) nvim_package="linux-arm64";;
+        *) print_warning "Unknown architecture: $(uname -m)"; return;;
     esac
 
-    local nvim_url="https://github.com/neovim/neovim/releases/download/v${nvim_version}/nvim-${nvim_version}-${nvim_package}.tar.gz"
+    print_status "Detected architecture: $(uname -m) -> ${nvim_package}"
+
+    local nvim_url="https://github.com/neovim/neovim/releases/download/v${nvim_version}/nvim-${nvim_package}.tar.gz"
     local temp_dir=$(mktemp -d)
 
-    curl -sL "$nvim_url" | tar xz -C "$temp_dir"
+    print_status "Downloading from: $nvim_url"
+    curl -fL "$nvim_url" | tar xz -C "$temp_dir"
 
-    sudo cp -r "$temp_dir/nvim-${nvim_version}-${nvim_package}/"/* /usr/local/
+    local nvim_dir="$temp_dir/nvim-${nvim_package}"
+    if [ ! -d "$nvim_dir" ]; then
+        nvim_dir="$temp_dir/nvim-linux-x86_64"
+    fi
+
+    local local_bin="$HOME/.local/bin"
+    mkdir -p "$local_bin"
+    cp -r "$nvim_dir"/* "$local_bin/"
+
+    if [[ ":$PATH:" != *":$local_bin:"* ]]; then
+        print_status "Adding $local_bin to PATH"
+        if [ -f "$HOME/.bashrc" ]; then
+            echo "export PATH=\"\$HOME/.local/bin:\$PATH\"" >> "$HOME/.bashrc"
+        fi
+        if [ -f "$HOME/.profile" ]; then
+            echo "export PATH=\"\$HOME/.local/bin:\$PATH\"" >> "$HOME/.profile"
+        fi
+        export PATH="$local_bin:$PATH"
+    fi
 
     rm -rf "$temp_dir"
 
-    print_success "Installed Neovim v${nvim_version}"
+    print_success "Installed Neovim v${nvim_version} to ~/.local/bin"
 }
 
 install_nvim() {
