@@ -45,4 +45,4 @@ else if test -x /usr/local/bin/brew
 end
 
 # opencode
-fish_add_path /Users/mszepieniec/.opencode/bin
+fish_add_path ~/.opencode/bin
