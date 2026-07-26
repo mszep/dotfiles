@@ -105,19 +105,24 @@ install_nvim() {
 
     mkdir -p "$HOME/.config"
 
-    if [ -d "$nvim_target" ]; then
+    # Already correctly linked?
+    if [ -L "$nvim_target" ] && [ "$(readlink -f "$nvim_target")" = "$(readlink -f "$nvim_source")" ]; then
+        print_success "Neovim configuration already symlinked to $nvim_source"
+        return
+    fi
+
+    if [ -e "$nvim_target" ] || [ -L "$nvim_target" ]; then
         local backup_dir="$HOME/.config/nvim.backup.$(date +%Y%m%d_%H%M%S)"
         print_warning "Backing up existing nvim config to $backup_dir"
         mv "$nvim_target" "$backup_dir"
     fi
 
-    cp -r "$nvim_source" "$nvim_target"
-    chmod -R 755 "$nvim_target"
+    # Symlink so the repo is the single source of truth across machines
+    ln -s "$nvim_source" "$nvim_target"
+    print_success "Neovim configuration symlinked: $nvim_target -> $nvim_source"
 
-    if command -v nvim >/dev/null 2>&1; then
-        print_success "Neovim configuration installed"
-    else
-        print_warning "Neovim not found - config installed but neovim not available"
+    if ! command -v nvim >/dev/null 2>&1; then
+        print_warning "Neovim not found - config linked but neovim not available"
     fi
 }
 

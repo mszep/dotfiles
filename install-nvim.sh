@@ -48,23 +48,24 @@ if [ ! -d "$HOME/.config" ]; then
     mkdir -p "$HOME/.config"
 fi
 
-# Handle existing nvim configuration
-if [ -d "$NVIM_TARGET_DIR" ]; then
-    BACKUP_DIR="$HOME/.config/nvim.backup.$(date +%Y%m%d_%H%M%S)"
-    print_warning "Existing nvim configuration found at $NVIM_TARGET_DIR"
-    print_status "Creating backup at $BACKUP_DIR"
-    mv "$NVIM_TARGET_DIR" "$BACKUP_DIR"
-    print_success "Backup created successfully"
+# Already correctly linked?
+if [ -L "$NVIM_TARGET_DIR" ] && [ "$(readlink -f "$NVIM_TARGET_DIR")" = "$(readlink -f "$NVIM_SOURCE_DIR")" ]; then
+    print_success "Neovim configuration already symlinked to $NVIM_SOURCE_DIR"
+else
+    # Back up any existing config (real dir, wrong symlink, or file)
+    if [ -e "$NVIM_TARGET_DIR" ] || [ -L "$NVIM_TARGET_DIR" ]; then
+        BACKUP_DIR="$HOME/.config/nvim.backup.$(date +%Y%m%d_%H%M%S)"
+        print_warning "Existing nvim configuration found at $NVIM_TARGET_DIR"
+        print_status "Creating backup at $BACKUP_DIR"
+        mv "$NVIM_TARGET_DIR" "$BACKUP_DIR"
+        print_success "Backup created successfully"
+    fi
+
+    # Symlink so the repo is the single source of truth across machines
+    print_status "Linking nvim configuration..."
+    ln -s "$NVIM_SOURCE_DIR" "$NVIM_TARGET_DIR"
+    print_success "Nvim configuration symlinked: $NVIM_TARGET_DIR -> $NVIM_SOURCE_DIR"
 fi
-
-# Copy nvim configuration
-print_status "Installing nvim configuration..."
-cp -r "$NVIM_SOURCE_DIR" "$NVIM_TARGET_DIR"
-print_success "Nvim configuration copied to $NVIM_TARGET_DIR"
-
-# Set proper permissions
-print_status "Setting proper permissions..."
-chmod -R 755 "$NVIM_TARGET_DIR"
 
 # Check if nvim is installed
 if command -v nvim >/dev/null 2>&1; then
@@ -78,7 +79,7 @@ else
 fi
 
 print_success "Installation completed successfully!"
-print_status "Configuration installed at: $NVIM_TARGET_DIR"
+print_status "Configuration installed at: $NVIM_TARGET_DIR -> $NVIM_SOURCE_DIR"
 
 # Display next steps
 echo
@@ -92,8 +93,10 @@ echo "  - Core settings (lua/config/set.lua)"
 echo "  - Key remappings (lua/config/remap.lua)"
 echo "  - Lazy.nvim plugin manager (lua/config/lazy.lua)"
 echo "  - Various plugins configured in lua/plugins/"
+echo
+echo "Note: edits under $NVIM_TARGET_DIR write directly into the dotfiles repo."
 
-if [ -d "$BACKUP_DIR" ]; then
+if [ -d "${BACKUP_DIR:-}" ]; then
     echo
     print_status "Your previous configuration was backed up to:"
     echo "  $BACKUP_DIR"
