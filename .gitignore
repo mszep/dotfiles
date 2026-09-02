@@ -1,3 +1,12 @@
 nvim/lazy-lock.json
 *.backup.*
 *.backup
+
+# Local-only fish config (this machine)
+fish/conf.d/local.fish
+
+# Machine-specific Claude local settings
+fish/.claude/settings.local.json
+
+# macOS
+.DS_Store
