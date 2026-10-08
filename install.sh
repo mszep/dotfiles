@@ -231,7 +231,12 @@ set_default_shell() {
     shell_path=$(command -v fish 2>/dev/null) || return
 
     local current_shell
-    current_shell=$(getent passwd "$USER" | cut -d: -f7)
+    if [ "$(detect_os)" = "macos" ]; then
+        # getent doesn't exist on macOS; use Directory Services instead
+        current_shell=$(dscl . -read "/Users/$USER" UserShell 2>/dev/null | awk '{print $2}')
+    else
+        current_shell=$(getent passwd "$USER" | cut -d: -f7)
+    fi
 
     if [ "$current_shell" != "$shell_path" ]; then
         print_status "Setting fish as default shell..."
