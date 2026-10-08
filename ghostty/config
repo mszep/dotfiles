@@ -1,0 +1,10 @@
+macos-option-as-alt = true
+
+# Cmd+Shift+[ / Cmd+Shift+] -> tmux previous/next session.
+# tmux cannot receive the Cmd (Super) modifier at all, so send the
+# Shift+Home / Shift+End escape codes instead; these are bound to
+# switch-client in ~/.tmux.conf. Note this replaces Ghostty's default
+# use of these chords for switching Ghostty tabs (tmux sessions
+# replace tabs in this workflow).
+keybind = super+shift+[=csi:1;2H
+keybind = super+shift+]=csi:1;2F

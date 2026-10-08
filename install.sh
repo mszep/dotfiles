@@ -179,6 +179,37 @@ install_tmux() {
     fi
 }
 
+install_ghostty() {
+    print_status "Installing Ghostty configuration..."
+
+    local ghostty_source="$DOTFILES_DIR/ghostty"
+    local ghostty_target="$HOME/.config/ghostty"
+
+    mkdir -p "$HOME/.config"
+
+    # Already correctly linked?
+    if [ -L "$ghostty_target" ] && [ "$(readlink -f "$ghostty_target")" = "$(readlink -f "$ghostty_source")" ]; then
+        print_success "Ghostty configuration already symlinked to $ghostty_source"
+        return
+    fi
+
+    if [ -e "$ghostty_target" ] || [ -L "$ghostty_target" ]; then
+        local backup_dir="$HOME/.config/ghostty.backup.$(date +%Y%m%d_%H%M%S)"
+        print_warning "Backing up existing ghostty config to $backup_dir"
+        mv "$ghostty_target" "$backup_dir"
+    fi
+
+    # Symlink so the repo is the single source of truth across machines
+    ln -s "$ghostty_source" "$ghostty_target"
+    print_success "Ghostty configuration symlinked: $ghostty_target -> $ghostty_source"
+
+    if command -v ghostty >/dev/null 2>&1; then
+        print_success "Ghostty configuration installed"
+    else
+        print_warning "Ghostty not found - config linked but ghostty not available (brew install --cask ghostty)"
+    fi
+}
+
 set_default_shell() {
     local shell_path
     shell_path=$(command -v fish 2>/dev/null) || return
@@ -222,6 +253,7 @@ main() {
     echo "  - Neovim configuration"
     echo "  - Fish shell configuration"
     echo "  - Tmux configuration"
+    echo "  - Ghostty configuration"
     echo
 
     install_prerequisites "$os"
@@ -236,6 +268,9 @@ main() {
     install_tmux
     echo
 
+    install_ghostty
+    echo
+
     set_default_shell
 
     echo
@@ -247,11 +282,13 @@ main() {
     echo "  1. Restart your terminal or run: exec fish"
     echo "  2. Start nvim to trigger plugin installation"
     echo "  3. Start tmux to trigger TPM plugin installation"
+    echo "  4. Reload Ghostty config with Cmd+Shift+, (or restart Ghostty)"
     echo
     echo "Installed configs:"
     echo "  - ~/.config/nvim"
     echo "  - ~/.config/fish"
     echo "  - ~/.tmux.conf"
+    echo "  - ~/.config/ghostty"
     echo
 }
 
