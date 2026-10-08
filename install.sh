@@ -134,14 +134,22 @@ install_fish() {
 
     mkdir -p "$HOME/.config"
 
-    if [ -d "$fish_target" ]; then
+    # Already correctly linked?
+    if [ -L "$fish_target" ] && [ "$(readlink -f "$fish_target")" = "$(readlink -f "$fish_source")" ]; then
+        print_success "Fish configuration already symlinked to $fish_source"
+        return
+    fi
+
+    if [ -e "$fish_target" ] || [ -L "$fish_target" ]; then
         local backup_dir="$HOME/.config/fish.backup.$(date +%Y%m%d_%H%M%S)"
         print_warning "Backing up existing fish config to $backup_dir"
         mv "$fish_target" "$backup_dir"
     fi
 
-    cp -r "$fish_source" "$fish_target"
-    chmod -R 755 "$fish_target"
+    # Symlink so the repo is the single source of truth across machines
+    # (machine-local overrides like fish/conf.d/local.fish stay untracked)
+    ln -s "$fish_source" "$fish_target"
+    print_success "Fish configuration symlinked: $fish_target -> $fish_source"
 
     if command -v fisher >/dev/null 2>&1; then
         print_status "Installing fish plugins..."
@@ -164,13 +172,21 @@ install_tmux() {
     local tmux_source="$DOTFILES_DIR/tmux/tmux.conf"
     local tmux_target="$HOME/.tmux.conf"
 
-    if [ -f "$tmux_target" ]; then
-        local backup_dir="$HOME/.tmux.conf.backup.$(date +%Y%m%d_%H%M%S)"
-        print_warning "Backing up existing tmux config to $backup_dir"
-        cp "$tmux_target" "$backup_dir"
+    # Already correctly linked?
+    if [ -L "$tmux_target" ] && [ "$(readlink -f "$tmux_target")" = "$(readlink -f "$tmux_source")" ]; then
+        print_success "Tmux configuration already symlinked to $tmux_source"
+        return
     fi
 
-    cp "$tmux_source" "$tmux_target"
+    if [ -e "$tmux_target" ] || [ -L "$tmux_target" ]; then
+        local backup_dir="$HOME/.tmux.conf.backup.$(date +%Y%m%d_%H%M%S)"
+        print_warning "Backing up existing tmux config to $backup_dir"
+        mv "$tmux_target" "$backup_dir"
+    fi
+
+    # Symlink so the repo is the single source of truth across machines
+    ln -s "$tmux_source" "$tmux_target"
+    print_success "Tmux configuration symlinked: $tmux_target -> $tmux_source"
 
     if command -v tmux >/dev/null 2>&1; then
         print_success "Tmux configuration installed"
