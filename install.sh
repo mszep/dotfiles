@@ -33,23 +33,39 @@ install_prerequisites() {
             print_warning "Homebrew not found. Installing Homebrew..."
             /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
         fi
-        brew install git neovim fish tmux
+        brew install git neovim fish tmux fzf
     elif [ "$os" = "linux" ]; then
         if command -v apt >/dev/null 2>&1; then
-            sudo apt update && sudo apt install -y git fish tmux curl
+            sudo apt update && sudo apt install -y git fish tmux curl fzf
             install_nvim_latest
         elif command -v dnf >/dev/null 2>&1; then
-            sudo dnf install -y git fish tmux curl
+            sudo dnf install -y git fish tmux curl fzf
             install_nvim_latest
         elif command -v pacman >/dev/null 2>&1; then
-            sudo pacman -S --noconfirm git fish tmux
+            sudo pacman -S --noconfirm git fish tmux fzf
             install_nvim_latest
         else
-            print_warning "No supported package manager found. Please install git, fish, and tmux manually."
+            print_warning "No supported package manager found. Please install git, fish, tmux, and fzf manually."
         fi
     fi
 
     print_success "Prerequisites installed"
+}
+
+ensure_local_bin_on_path() {
+    local local_bin="$HOME/.local/bin"
+    mkdir -p "$local_bin"
+
+    if [[ ":$PATH:" != *":$local_bin:"* ]]; then
+        print_status "Adding $local_bin to PATH"
+        if [ -f "$HOME/.bashrc" ] && ! grep -qxF 'export PATH="$HOME/.local/bin:$PATH"' "$HOME/.bashrc"; then
+            echo "export PATH=\"\$HOME/.local/bin:\$PATH\"" >> "$HOME/.bashrc"
+        fi
+        if [ -f "$HOME/.profile" ] && ! grep -qxF 'export PATH="$HOME/.local/bin:$PATH"' "$HOME/.profile"; then
+            echo "export PATH=\"\$HOME/.local/bin:\$PATH\"" >> "$HOME/.profile"
+        fi
+        export PATH="$local_bin:$PATH"
+    fi
 }
 
 install_nvim_latest() {
@@ -78,19 +94,8 @@ install_nvim_latest() {
     fi
 
     local local_bin="$HOME/.local/bin"
-    mkdir -p "$local_bin"
     cp -r "$nvim_dir"/* "$local_bin/"
-
-    if [[ ":$PATH:" != *":$local_bin:"* ]]; then
-        print_status "Adding $local_bin to PATH"
-        if [ -f "$HOME/.bashrc" ]; then
-            echo "export PATH=\"\$HOME/.local/bin:\$PATH\"" >> "$HOME/.bashrc"
-        fi
-        if [ -f "$HOME/.profile" ]; then
-            echo "export PATH=\"\$HOME/.local/bin:\$PATH\"" >> "$HOME/.profile"
-        fi
-        export PATH="$local_bin:$PATH"
-    fi
+    ensure_local_bin_on_path
 
     rm -rf "$temp_dir"
 
@@ -195,6 +200,42 @@ install_tmux() {
     fi
 }
 
+install_tmux_sessionizer() {
+    print_status "Installing tmux-sessionizer..."
+
+    # Session picker used by tmux.conf (prefix f) and nvim (<C-f>)
+    local sessionizer_url="https://raw.githubusercontent.com/ThePrimeagen/tmux-sessionizer/master/tmux-sessionizer"
+    local sessionizer_bin="$HOME/.local/bin/tmux-sessionizer"
+
+    # Put ~/.local/bin on PATH first so an existing install is detected on re-runs
+    ensure_local_bin_on_path
+
+    if command -v tmux-sessionizer >/dev/null 2>&1; then
+        print_success "tmux-sessionizer already installed ($(command -v tmux-sessionizer))"
+    else
+        print_status "Downloading from: $sessionizer_url"
+        if curl -fsSL "$sessionizer_url" -o "$sessionizer_bin"; then
+            chmod +x "$sessionizer_bin"
+            print_success "Installed tmux-sessionizer to ~/.local/bin"
+        else
+            # Remove any partially-downloaded file so nothing broken is left on PATH
+            rm -f "$sessionizer_bin"
+            print_warning "Failed to download tmux-sessionizer; install it manually from $sessionizer_url"
+        fi
+    fi
+
+    # Machine-local config, created only if absent so per-machine edits survive re-runs.
+    # The built-in defaults search only one level deep, which misses ~/projects/*.
+    local config_dir="${XDG_CONFIG_HOME:-$HOME/.config}/tmux-sessionizer"
+    local config_file="$config_dir/tmux-sessionizer.conf"
+    if [ ! -f "$config_file" ]; then
+        mkdir -p "$config_dir"
+        printf '# Directories searched by tmux-sessionizer, as path:max-search-depth\n' > "$config_file"
+        printf 'TS_EXTRA_SEARCH_PATHS=(~/projects:2)\n' >> "$config_file"
+        print_status "Created default config at $config_file (edit to change searched directories)"
+    fi
+}
+
 install_ghostty() {
     print_status "Installing Ghostty configuration..."
 
@@ -274,6 +315,7 @@ main() {
     echo "  - Neovim configuration"
     echo "  - Fish shell configuration"
     echo "  - Tmux configuration"
+    echo "  - tmux-sessionizer (session picker used by tmux and nvim)"
     echo "  - Ghostty configuration"
     echo
 
@@ -287,6 +329,9 @@ main() {
     echo
 
     install_tmux
+    echo
+
+    install_tmux_sessionizer
     echo
 
     install_ghostty
@@ -303,7 +348,8 @@ main() {
     echo "  1. Restart your terminal or run: exec fish"
     echo "  2. Start nvim to trigger plugin installation"
     echo "  3. Start tmux to trigger TPM plugin installation"
-    echo "  4. Reload Ghostty config with Cmd+Shift+, (or restart Ghostty)"
+    echo "  4. In tmux, press prefix f (or <C-f> in nvim) to switch project sessions"
+    echo "  5. Reload Ghostty config with Cmd+Shift+, (or restart Ghostty)"
     echo
     echo "Installed configs:"
     echo "  - ~/.config/nvim"
